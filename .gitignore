@@ -1,0 +1,13 @@
+.env
+.venv/
+__pycache__/
+.pytest_cache/
+*.pyc
+data/chroma/
+*.db-wal
+*.db-shm
+
+.env.*
+!.env.example
+*.sqlite3*
+source_assets/

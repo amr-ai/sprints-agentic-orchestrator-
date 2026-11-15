@@ -1,0 +1,20 @@
+{
+  "sum_two": {
+    "description": "Write a function add(a, b) returning the sum of two integers.",
+    "pass_threshold": 70,
+    "tests": [
+      {"expression": "add(2, 3)", "expected": 5},
+      {"expression": "add(-3, 1)", "expected": -2},
+      {"expression": "add(0, 0)", "expected": 0}
+    ]
+  },
+  "even_numbers": {
+    "description": "Write a function evens(values) returning all even numbers in their original order.",
+    "pass_threshold": 70,
+    "tests": [
+      {"expression": "evens([1,2,3,4])", "expected": [2,4]},
+      {"expression": "evens([])", "expected": []},
+      {"expression": "evens([-4,-3,0])", "expected": [-4,0]}
+    ]
+  }
+}

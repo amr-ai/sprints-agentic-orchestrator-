@@ -1,0 +1,5 @@
+# The student code runs INSIDE this container, never in the API/main process.
+FROM python:3.11-slim
+RUN pip install --no-cache-dir 'langchain-experimental>=0.4,<1.0'
+WORKDIR /tmp
+USER 65534:65534

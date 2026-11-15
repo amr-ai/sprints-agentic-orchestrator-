@@ -1,0 +1,26 @@
+learner_id,name,bootcamp_track,completed_modules,python_assignment_score,target_salary_egp,preferred_employers,readiness_status
+SPR-1001,Demo Learner 01,Advanced Agentic AI,12,95,30000,Fawry,Ready for Placement
+SPR-1002,Demo Learner 02,Advanced Agentic AI,6,57,16000,,In Progress
+SPR-1003,Demo Learner 03,Frontend,7,58,16500,,In Progress
+SPR-1004,Demo Learner 04,Data Science,8,59,17000,,In Progress
+SPR-1005,Demo Learner 05,Advanced Agentic AI,9,60,17500,,In Progress
+SPR-1006,Demo Learner 06,Frontend,4,61,18000,,In Progress
+SPR-1007,Demo Learner 07,Data Science,5,62,18500,,In Progress
+SPR-1008,Demo Learner 08,Advanced Agentic AI,6,63,19000,,In Progress
+SPR-1009,Demo Learner 09,Frontend,7,64,19500,,In Progress
+SPR-1010,Demo Learner 10,Data Science,8,65,20000,,In Progress
+SPR-1011,Demo Learner 11,Advanced Agentic AI,9,66,20500,,In Progress
+SPR-1012,Demo Learner 12,Frontend,4,67,21000,,In Progress
+SPR-1013,Demo Learner 13,Data Science,5,68,21500,,In Progress
+SPR-1014,Demo Learner 14,Advanced Agentic AI,6,69,22000,,In Progress
+SPR-1015,Demo Learner 15,Frontend,7,70,22500,,In Progress
+SPR-1016,Demo Learner 16,Data Science,8,71,23000,,In Progress
+SPR-1017,Demo Learner 17,Advanced Agentic AI,9,72,23500,,In Progress
+SPR-1018,Demo Learner 18,Frontend,4,73,24000,,In Progress
+SPR-1019,Demo Learner 19,Data Science,5,74,24500,,In Progress
+SPR-1020,Demo Learner 20,Advanced Agentic AI,6,75,25000,,In Progress
+SPR-1021,Demo Learner 21,Frontend,7,55,25500,,In Progress
+SPR-1022,Demo Learner 22,Data Science,8,56,26000,,In Progress
+SPR-1023,Demo Learner 23,Advanced Agentic AI,9,57,26500,,In Progress
+SPR-1024,Demo Learner 24,Frontend,4,58,27000,,In Progress
+SPR-1025,Demo Learner 25,Data Science,5,59,27500,,In Progress

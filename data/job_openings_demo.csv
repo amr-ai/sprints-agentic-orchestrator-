@@ -1,0 +1,4 @@
+opening_id,employer,role,track,min_modules,min_python_score,salary_min_egp,salary_max_egp,tier_1,source_status
+DEMO-JOB-1,Fawry,Junior Agentic AI Engineer,Advanced Agentic AI,10,90,25000,50000,1,DEMO_NOT_VERIFIED
+DEMO-JOB-2,Swvl,Junior Frontend Engineer,Frontend,12,80,12000,20000,0,DEMO_NOT_VERIFIED
+DEMO-JOB-3,e& Egypt,Junior Data Analyst,Data Science,10,80,22000,35000,0,DEMO_NOT_VERIFIED
