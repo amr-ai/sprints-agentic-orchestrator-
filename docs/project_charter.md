@@ -4,7 +4,7 @@
 Manual curriculum support, Python grading and graduate-to-partner matching do not scale with growing learner cohorts.
 
 ## Scope
-A Gemini-driven unified LangGraph TypedDict StateGraph routes Sprints learner requests to curriculum retrieval, code assessment, learner record lookups, or database-backed career matching. Tier-1 partner matches require an explicit human decision via `interrupt` / `Command(resume=...)`.
+A unified LangGraph TypedDict StateGraph routes Sprints learner requests to curriculum retrieval, code assessment, learner record lookups, or database-backed career matching. The demo uses Groq for chat and Gemini for curriculum embeddings. Tier-1 partner matches require an explicit human decision via `interrupt` / `Command(resume=...)`.
 
 ## Two non-negotiable constraints
 1. Per-student conversational state must be isolated through unique thread IDs and LangGraph checkpoints.

@@ -5,6 +5,11 @@ from langgraph.graph.message import add_messages
 
 
 class SprintsState(TypedDict, total=False):
+    """Checkpoint Sprints learner messages and share evidence across workers for a turn.
+
+    Retrieval timing is absent or None until the Advisor completes a search.
+    """
+
     messages: Annotated[list[BaseMessage], add_messages]
     learner_id: str
     query: str
@@ -13,7 +18,7 @@ class SprintsState(TypedDict, total=False):
     intent: str
     answer: str
     evidence: list[dict]
-    retrieval_ms: float
+    retrieval_ms: float | None
     context_sufficient: bool
     search_query: str
     judge_approved: bool

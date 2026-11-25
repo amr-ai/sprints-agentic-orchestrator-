@@ -1,13 +1,35 @@
-# 3-5 Minute Demo Script (record a real screen capture)
+# Narrated Sprints walkthrough
 
-**0:00-0:30 — Setup:** Show `.env` (redacted), `python -m src.main init`, `python -m src.main ingest`, Docker sandbox image and `pytest -q` results. Distinguish the synthetic curriculum and fictional job openings.
+The video replays terminal output captured from the Groq CLI. Windows text-to-speech provides English narration. The walkthrough uses the supplied learner CSV, the synthetic curriculum file, and fictional job openings. The learner's name is redacted in the video.
 
-**0:30-1:40 — Curriculum query:** Start `python -m src.main shell --learner SPR-1001`. Ask: `How does LangGraph StateGraph route advisor and assessor questions?` Show Chroma source, answer and measured retrieval latency. Follow up with an unrelated unsupported curriculum question and show the explicit unable-to-verify path.
+## 1. Setup
 
-**1:40-2:45 — Python grading:** Enter `/code data/demo_submission.py sum_two`. Show Docker-only PythonREPL execution, test results, typed grade JSON schema and at-most-three judge iterations. Temporarily remove Docker from PATH and demonstrate fail-closed behavior (no host execution).
+This is the Sprints multi-agent career and assessment orchestrator. One LangGraph workflow handles curriculum questions, Python submissions, learner records, and career matching. The setup imports twenty-five learner records, indexes one synthetic curriculum document in Chroma, and loads three fictional openings. Groq hosts the chat model, G P T O S S one hundred twenty B. Gemini creates the embeddings for curriculum search.
 
-**2:45-4:00 — Career matching and approval:** First run `python -m src.main seed-demo-jobs` to create **fictional** openings. Ask `Find a placement match for me`. Show the SQL record match, Sprints learner qualifications, tier-1 approval interrupt, explicit reviewer input and resumed graph. Explain this is a DEMO match and not a confirmed Fawry opening.
+## 2. Curriculum Advisor
 
-**4:00-4:30 — Evidence and limits:** Open report and discuss missing official curriculum, 25 rather than 500 learners, missing verified partner vacancies, production auth, persistence and isolated execution limitations.
+The learner asks how StateGraph routes Advisor and Assessor questions. The Advisor searches Chroma, checks the evidence, and cites the filename in its answer. Here the source explains that a conditional edge selects the Advisor for curriculum questions and the Assessor for code grading. The printed retrieval time covers both a Gemini query embedding and the vector search. This recorded call exceeds the one-second target.
 
-Never claim that a narrated demo is a recorded MP4. Record an actual 3-5 minute walkthrough after running the project with a valid Gemini key and Docker.
+## 3. Python Assessor
+
+In the same learner session, the code command submits the sum-two exercise. Python REPL executes the submission and the rubric tests inside the Docker sandbox. All three tests pass and determine the score of one hundred. The model writes typed feedback, and a separate judge reviews it against the test evidence. The graph allows up to three feedback attempts. Starting the grading turn clears the Advisor retrieval timing.
+
+## 4. Tier-one partner review
+
+The learner now asks for a job match. SQLite checks progress, assessment score, employer preferences, and salary target against the seeded openings. The fixture returns a Fawry match. Because it is a tier-one opening in this demo, LangGraph pauses and presents the structured approval request. The shell asks for an explicit decision and reviewer ID before it resumes.
+
+## 5. Resuming the recommendation
+
+The reviewer enters yes and a simulated reviewer ID. LangGraph resumes from the checkpoint for the same learner. The recommendation includes the salary range stored in SQLite and labels the opening as a demo. Together, the pause and resume demonstrate the human approval gate. A placement pilot needs verified openings and authenticated staff reviewers.
+
+## 6. Learner records
+
+The learner asks for completed modules, target salary, and preferred employers. The ReAct message trace shows that Groq invoked the authorized learner-record tool. A parameterized, read-only SQLite query returns twelve completed modules and a salary target of thirty thousand Egyptian pounds. The Python grade here comes from the stored learner record. The earlier grade came from the exercise submitted during this session.
+
+## 7. Grading with Docker unavailable
+
+A separate shell runs the same submission with Docker removed from that process's search path. The Assessor reports unable to verify and names the Docker Python REPL tool in the structured failure. The application withholds the grade. Learner code has no host execution fallback.
+
+## 8. Verification and rollout
+
+Twelve automated tests pass, including a curriculum request followed by assessment on the same learner thread. A separate test covers the timing reset after a failed route. The verification notes record the full retrieval latency and an earlier warm Chroma lookup benchmark. A pilot needs official course material, verified openings, durable checkpoints, staff authentication, and a larger latency benchmark.

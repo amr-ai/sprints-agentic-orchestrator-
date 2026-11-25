@@ -1,6 +1,6 @@
-"""Docker-based Sprints Python assessment, Gemini feedback, and judge loop."""
+"""Docker-based Sprints Python assessment, model feedback, and judge loop."""
 from langchain_core.prompts import ChatPromptTemplate
-from src.config import gemini_model
+from src.config import chat_model
 from src.schemas import GradeFeedback, JudgeDecision, unable_to_verify
 from src.tools.code_repl import execute_submission, load_rubric
 
@@ -40,7 +40,7 @@ def write_feedback_node(state: dict) -> dict:
         expected_score = execution["score"]
         expected_pass = expected_score >= execution["pass_threshold"]
         rubric = load_rubric(state.get("assignment_id", "sum_two"))
-        result = (FEEDBACK_PROMPT | gemini_model().with_structured_output(
+        result = (FEEDBACK_PROMPT | chat_model().with_structured_output(
             GradeFeedback, method="json_schema"
         )).invoke({"rubric": rubric, "execution": execution,
                   "score": expected_score, "passed": expected_pass,
@@ -56,9 +56,9 @@ def write_feedback_node(state: dict) -> dict:
 
 
 def judge_node(state: dict) -> dict:
-    """Secondary Gemini LLM judge verifies rubric and grade consistency."""
+    """Verify rubric and grade consistency through a separate model call."""
     try:
-        result = (JUDGE_PROMPT | gemini_model().with_structured_output(
+        result = (JUDGE_PROMPT | chat_model().with_structured_output(
             JudgeDecision, method="json_schema"
         )).invoke({"rubric": load_rubric(state.get("assignment_id", "sum_two")),
                   "execution": state["execution"], "feedback": state["feedback"]})
@@ -74,7 +74,9 @@ def judge_node(state: dict) -> dict:
 
 
 def grade_output_node(state: dict) -> dict:
-    """Return final safe output after approval or after max three attempts."""
+    """Return the verified Sprints grade, or explain why grading stopped."""
+    if state.get("error") and state.get("answer"):
+        return {"answer": state["answer"]}
     if state.get("judge_approved") and not state.get("error"):
         feedback = state["feedback"]
         return {"answer": (

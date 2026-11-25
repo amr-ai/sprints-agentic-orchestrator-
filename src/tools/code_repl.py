@@ -46,17 +46,22 @@ def load_rubric(assignment_id: str) -> dict:
     return data[assignment_id]
 
 
-def execute_submission(code: str, assignment_id: str, timeout: int = 8) -> dict:
+def execute_submission(code: str, assignment_id: str, timeout: int | None = None) -> dict:
     """Run student code using PythonREPL only INSIDE a Docker sandbox.
 
     Docker controls: disabled network, read-only root, no capabilities,
     no-new-privileges, unprivileged UID, CPU/memory/PID budgets and timeout.
-    No auto-grading is allowed if the sandbox cannot be run.
+    Sprints demo environments can set DOCKER_SANDBOX_TIMEOUT_SECONDS to cover
+    Docker startup. No auto-grading is allowed if the sandbox cannot be run.
     """
     if len(code) > 10000:
         raise ValueError("Submission exceeds 10,000 character limit")
     if not shutil.which("docker"):
         raise RuntimeError("Docker unavailable; refusing unsafe host code execution")
+    if timeout is None:
+        timeout = int(os.getenv("DOCKER_SANDBOX_TIMEOUT_SECONDS", "8"))
+    if timeout <= 0:
+        raise ValueError("Docker sandbox timeout must be a positive number of seconds")
     rubric = load_rubric(assignment_id)
     image = os.getenv("DOCKER_SANDBOX_IMAGE", "sprints-python-sandbox:local")
     command = [

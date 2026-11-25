@@ -1,4 +1,4 @@
-"""Gemini-only configuration for the Sprints multi-agent orchestrator."""
+"""Chat provider and curriculum embedding configuration for Sprints."""
 import os
 from pathlib import Path
 from dotenv import load_dotenv
@@ -13,18 +13,42 @@ def path_from_env(name: str, default: str) -> Path:
     return raw if raw.is_absolute() else ROOT / raw
 
 
-def gemini_model():
-    """Create the Gemini chat model shared by every Sprints worker agent."""
+def chat_provider() -> str:
+    """Return the provider selected for this process."""
+    provider = os.getenv("CHAT_PROVIDER", "groq").strip().lower()
+    if provider not in {"gemini", "groq"}:
+        raise ValueError("Set CHAT_PROVIDER to gemini or groq")
+    return provider
+
+
+def chat_model():
+    """Create the shared chat model for the selected provider."""
+    if chat_provider() == "groq":
+        from langchain_groq import ChatGroq
+
+        key = os.getenv("GROQ_API_KEY")
+        if not key or key == "PASTE_YOUR_GROQ_API_KEY":
+            raise RuntimeError("Set GROQ_API_KEY in .env to use Groq")
+        return ChatGroq(
+            model=os.getenv("GROQ_MODEL", "openai/gpt-oss-120b"),
+            api_key=key,
+            temperature=0,
+            timeout=20,
+            max_retries=2,
+        )
+
     from langchain_google_genai import ChatGoogleGenerativeAI
     key = os.getenv("GOOGLE_API_KEY") or os.getenv("GEMINI_API_KEY")
     if not key or key == "PASTE_YOUR_GEMINI_API_KEY":
         raise RuntimeError("Set GOOGLE_API_KEY (or GEMINI_API_KEY) in .env")
+    model = os.getenv("GEMINI_MODEL", "gemini-3.5-flash-lite")
+    options = {"temperature": 0, "max_retries": 1, "timeout": 45}
+    if model == "gemini-3.5-flash-lite":
+        options = {"thinking_level": "minimal", "max_retries": 3, "timeout": 20}
     return ChatGoogleGenerativeAI(
-        model=os.getenv("GEMINI_MODEL", "gemini-3.8-flash"),
+        model=model,
         google_api_key=key,
-        temperature=0,
-        max_retries=1,
-        timeout=45,
+        **options,
     )
 
 

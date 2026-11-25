@@ -1,4 +1,4 @@
-"""Sprints Gemini LangGraph command-line demo: init, ingest and live shell."""
+"""Sprints LangGraph command-line demo: init, ingest and live shell."""
 import argparse
 import logging
 import json
@@ -6,11 +6,13 @@ from pathlib import Path
 from langchain_core.messages import HumanMessage
 from langgraph.types import Command
 from src.agents.graph import build_graph
+from src.config import chat_provider
 from src.tools.db_queries import initialize_db, seed_demo_openings
 from src.tools.rag_retriever import ingest_curriculum
 
 
 def _render(result):
+    """Show a Sprints reply with current-turn timing, or prompt for placement review."""
     if "__interrupt__" in result:
         for item in result["__interrupt__"]:
             print("\nAPPROVAL REQUIRED (HITL):", json.dumps(item.value, indent=2))
@@ -27,7 +29,7 @@ def run_shell(learner_id: str):
     """Maintain MemorySaver context and approval resume in one live process."""
     graph = build_graph()
     config = {"configurable": {"thread_id": f"learner::{learner_id}"}}
-    print(f"Sprints Gemini shell | learner={learner_id} | /code PATH ASSIGNMENT_ID | /quit")
+    print(f"Sprints {chat_provider().capitalize()} shell | learner={learner_id} | /code PATH ASSIGNMENT_ID | /quit")
     print("This local CLI is a demonstration, not an authenticated placement interface.")
     while True:
         try:
@@ -67,7 +69,8 @@ def run_shell(learner_id: str):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Sprints Gemini multi-agent CLI")
+    """Dispatch Sprints data setup, curriculum ingestion, or the learner demo shell."""
+    parser = argparse.ArgumentParser(description="Sprints multi-agent CLI")
     sub = parser.add_subparsers(dest="command", required=True)
     sub.add_parser("init", help="Load the supplied learner CSV into SQLite")
     sub.add_parser("ingest", help="Embed curriculum .md/.txt in persistent Chroma")

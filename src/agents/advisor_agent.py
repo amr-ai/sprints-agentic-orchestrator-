@@ -1,6 +1,6 @@
 """Agentic curriculum RAG with a self-reflection edge and bounded rewrite."""
 from langchain_core.prompts import ChatPromptTemplate
-from src.config import gemini_model
+from src.config import chat_model
 from src.schemas import ContextAssessment, Rewrite, unable_to_verify
 from src.tools.rag_retriever import search_curriculum
 
@@ -36,6 +36,7 @@ def retrieve_node(state: dict) -> dict:
 
 
 def _context(state: dict) -> str:
+    """Format retrieved curriculum excerpts with source names and demo markers."""
     return "\n\n".join(
         f"SOURCE {i+1} [{item['source']}] (demo_only={item['demo_only']}):\n{item['text']}"
         for i, item in enumerate(state.get("evidence") or [])
@@ -47,7 +48,7 @@ def reflection_node(state: dict) -> dict:
     if state.get("error") or not state.get("evidence"):
         return {"context_sufficient": False}
     try:
-        result = (REFLECTION | gemini_model().with_structured_output(
+        result = (REFLECTION | chat_model().with_structured_output(
             ContextAssessment, method="json_schema"
         )).invoke({"query": state["query"], "context": _context(state)})
         return {"context_sufficient": result.sufficient}
@@ -59,7 +60,7 @@ def reflection_node(state: dict) -> dict:
 def rewrite_node(state: dict) -> dict:
     """Rephrase the query exactly once when curriculum evidence is insufficient."""
     try:
-        result = (REWRITE | gemini_model().with_structured_output(
+        result = (REWRITE | chat_model().with_structured_output(
             Rewrite, method="json_schema"
         )).invoke({"query": state["query"]})
         return {"search_query": result.reformulated_query}
@@ -72,7 +73,7 @@ def answer_node(state: dict) -> dict:
     if state.get("error") or not state.get("context_sufficient"):
         return {"answer": "Unable to verify: the provided curriculum does not support this answer."}
     try:
-        result = (ANSWER | gemini_model()).invoke(
+        result = (ANSWER | chat_model()).invoke(
             {"query": state["query"], "context": _context(state)}
         )
         content = result.content
@@ -82,4 +83,4 @@ def answer_node(state: dict) -> dict:
         return {"answer": answer or "Unable to verify: empty response."}
     except Exception as exc:
         return {"error": unable_to_verify("advisor_gemini", str(exc)),
-                "answer": "Unable to verify: Gemini advisor unavailable."}
+                "answer": "Unable to verify: the advisor model is unavailable."}

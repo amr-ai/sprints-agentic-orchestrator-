@@ -5,6 +5,7 @@ from src.tools.db_queries import initialize_db, seed_demo_openings, get_learner,
 
 
 def test_import_demo_learner_records():
+    """Import all 25 anonymized Sprints learner rows and report unknown IDs as missing."""
     with TemporaryDirectory() as d:
         db = Path(d) / "students.db"
         assert initialize_db(db) == 25
@@ -13,6 +14,7 @@ def test_import_demo_learner_records():
 
 
 def test_parameterized_queries_reject_sql_injection():
+    """Treat the Sprints learner ID as a lookup value in parameterized SQL."""
     with TemporaryDirectory() as d:
         db = Path(d) / "students.db"
         initialize_db(db)
@@ -21,6 +23,7 @@ def test_parameterized_queries_reject_sql_injection():
 
 
 def test_matching_does_not_invent_jobs_and_uses_recorded_gates():
+    """Match only seeded demo openings for learners who meet the placement gates."""
     with TemporaryDirectory() as d:
         db = Path(d) / "students.db"
         initialize_db(db)

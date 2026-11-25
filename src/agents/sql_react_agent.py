@@ -1,8 +1,8 @@
-"""Constrained Gemini ReAct learner lookup through one parameterized SQL tool."""
+"""Constrained ReAct learner lookup through one parameterized SQL tool."""
 import logging
 from langchain.agents import create_agent
 from langchain_core.tools import tool
-from src.config import gemini_model
+from src.config import chat_model
 from src.schemas import unable_to_verify
 from src.tools.db_queries import format_learner, get_learner
 
@@ -23,7 +23,7 @@ def react_lookup_node(state: dict) -> dict:
     learner_id = state["learner_id"]
     try:
         agent = create_agent(
-            model=gemini_model(), tools=[get_sprints_learner_record],
+            model=chat_model(), tools=[get_sprints_learner_record],
             system_prompt=("You are a Sprints learner-record assistant. Always invoke "
                            "get_sprints_learner_record with the exact provided learner ID. "
                            "Do not invent records or extrapolate qualifications."),
