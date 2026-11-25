@@ -40,7 +40,7 @@ Each conversation uses a `thread_id` derived from its learner ID, backed by `InM
 
 - Python 3.11+, `GROQ_API_KEY` for chat, and `GOOGLE_API_KEY` for curriculum embeddings. The application and `.env.example` default to `CHAT_PROVIDER=groq`, `GROQ_MODEL=openai/gpt-oss-120b`, and `GEMINI_EMBEDDING_MODEL=gemini-embedding-001`.
 - Set `CHAT_PROVIDER=gemini` to use Gemini for chat. That provider defaults to `GEMINI_MODEL=gemini-3.5-flash-lite`.
-- Docker Engine/CLI grades student code inside an isolated container. The demo configuration allows 40 seconds, including startup, via `DOCKER_SANDBOX_TIMEOUT_SECONDS`.
+- Docker Engine/CLI grades student code inside an isolated container. The grader has up to 60 seconds to start and confirm readiness before it receives learner code. The example sets `DOCKER_SANDBOX_TIMEOUT_SECONDS=40` for the grading phase.
 - Network access for pip packages, chat, and embeddings.
 
 ## Windows PowerShell setup
@@ -111,11 +111,11 @@ The console prints the latest search time from the current Advisor turn. It incl
 
 ## Submission and evaluation
 
-Run `python -m pytest -q`. The 12 offline tests cover CSV ingestion, SQL safety, matching constraints, grading failure without Docker, typed feedback, bounded loops, tier-1 routing, and retrieval timing across consecutive turns.
+Run `python -m pytest -q`. The 14 offline tests cover CSV ingestion, SQL safety, matching constraints, grading failure without Docker, sandbox startup and execution timeouts, typed feedback, bounded loops, tier-1 routing, and retrieval timing across consecutive turns.
 
 - `docs/technical_report.pdf` and `docs/final_presentation.pptx` / `.pdf`: technical report and nine stakeholder slides covering the current Groq demo.
 - `notebooks/evaluator_optimizer_loop.ipynb`: local notebook with observed (offline) outputs.
-- [3:31 narrated walkthrough MP4](docs/sprints_narrated_walkthrough.mp4) and [narration script](docs/demo_walkthrough_script.md). The video replays captured CLI output from the current Groq demo with English narration.
+- [3:31 narrated walkthrough MP4](docs/sprints_narrated_walkthrough.mp4) and [narration script](docs/demo_walkthrough_script.md). The video replays the recorded Groq demo with English narration. The recording shows the 12 tests that were present before the two sandbox timeout checks were added.
 - `docs/project_charter.md`: discovery deliverable.
 
 ## Official technical references

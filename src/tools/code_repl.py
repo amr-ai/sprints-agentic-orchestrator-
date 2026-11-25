@@ -8,15 +8,19 @@ import os
 import shutil
 import subprocess
 import tempfile
+import time
 from pathlib import Path
 from src.config import ROOT
 
 RUBRICS = ROOT / "data" / "rubrics" / "assignments.json"
+SANDBOX_STARTUP_TIMEOUT_SECONDS = 60
+_READY_LINE = b"sprints-sandbox-ready\n"
 
 # Runner is evaluated only inside the sandbox container, not on the host.
 _SANDBOX_RUNNER = r'''
 import json, sys
 from langchain_experimental.utilities import PythonREPL
+print("sprints-sandbox-ready", flush=True)
 payload = json.load(sys.stdin)
 repl = PythonREPL()
 code = payload["code"]
@@ -46,13 +50,38 @@ def load_rubric(assignment_id: str) -> dict:
     return data[assignment_id]
 
 
+def _wait_for_sandbox(process: subprocess.Popen, stdout_path: Path) -> bool:
+    """Wait for the trusted grader to import PythonREPL before sending learner code."""
+    deadline = time.monotonic() + SANDBOX_STARTUP_TIMEOUT_SECONDS
+    with stdout_path.open("rb") as output:
+        while True:
+            output.seek(0)
+            if output.readline() == _READY_LINE:
+                return True
+            if process.poll() is not None:
+                return False
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise RuntimeError("Docker sandbox startup timed out before receiving the submission")
+            time.sleep(min(0.05, remaining))
+
+
+def _remove_failed_sandbox(container_name: str) -> None:
+    """Remove the unique Sprints container when its attached CLI fails or is stopped."""
+    try:
+        subprocess.run(["docker", "rm", "-f", container_name], stdout=subprocess.DEVNULL,
+                       stderr=subprocess.DEVNULL, timeout=4, check=False)
+    except (subprocess.SubprocessError, OSError):
+        pass  # Auto-removal still applies once the container exits.
+
+
 def execute_submission(code: str, assignment_id: str, timeout: int | None = None) -> dict:
     """Run student code using PythonREPL only INSIDE a Docker sandbox.
 
     Docker controls: disabled network, read-only root, no capabilities,
     no-new-privileges, unprivileged UID, CPU/memory/PID budgets and timeout.
-    Sprints demo environments can set DOCKER_SANDBOX_TIMEOUT_SECONDS to cover
-    Docker startup. No auto-grading is allowed if the sandbox cannot be run.
+    Docker startup has a separate deadline. DOCKER_SANDBOX_TIMEOUT_SECONDS
+    controls how long the ready sandbox receives to grade a submission.
     """
     if len(code) > 10000:
         raise ValueError("Submission exceeds 10,000 character limit")
@@ -65,41 +94,39 @@ def execute_submission(code: str, assignment_id: str, timeout: int | None = None
     rubric = load_rubric(assignment_id)
     image = os.getenv("DOCKER_SANDBOX_IMAGE", "sprints-python-sandbox:local")
     command = [
-        "docker", "run", "--rm", "-i", "--network", "none", "--read-only",
+        "docker", "run", "--rm", "-i", "--pull=never", "--network", "none", "--read-only",
         "--cap-drop=ALL", "--security-opt=no-new-privileges", "--pids-limit=32",
         "--memory=192m", "--memory-swap=192m", "--cpus=0.5",
         "--user=65534:65534", "--tmpfs=/tmp:rw,nosuid,noexec,size=16m",
         "--log-driver=none", "--ulimit", "nofile=32:32",
         image, "python", "-I", "-B", "-c", _SANDBOX_RUNNER,
     ]
-    payload = json.dumps({"code": code, "tests": rubric["tests"]})
+    payload = json.dumps({"code": code, "tests": rubric["tests"]}).encode()
     with tempfile.TemporaryDirectory(prefix="sprints_sandbox_") as work_dir:
-        cidfile = Path(work_dir) / "container.cid"
-        command[2:2] = ["--cidfile", str(cidfile)]
-        with tempfile.TemporaryFile(mode="w+b") as out, tempfile.TemporaryFile(mode="w+b") as err:
-            try:
-                # Only the Docker daemon executes learner code, not this Python process.
-                result = subprocess.run(command, input=payload.encode(), stdout=out,
-                                        stderr=err, timeout=timeout, check=False)
-            except subprocess.TimeoutExpired as exc:
-                # A killed Docker CLI may leave its container alive; force cleanup.
-                if cidfile.exists():
-                    cid = cidfile.read_text(encoding="ascii").strip()
-                    if cid:
-                        try:
-                            subprocess.run(["docker", "rm", "-f", cid],
-                                           stdout=subprocess.DEVNULL,
-                                           stderr=subprocess.DEVNULL, timeout=4,
-                                           check=False)
-                        except (subprocess.SubprocessError, OSError):
-                            pass  # The host operator should also monitor orphan containers.
-                raise RuntimeError("Sandbox code execution timed out") from exc
+        container_name = Path(work_dir).name
+        stdout_path = Path(work_dir) / "stdout"
+        command[2:2] = ["--name", container_name]
+        with stdout_path.open("w+b") as out, tempfile.TemporaryFile(mode="w+b") as err:
+            with subprocess.Popen(command, stdin=subprocess.PIPE, stdout=out, stderr=err) as process:
+                try:
+                    ready = _wait_for_sandbox(process, stdout_path)
+                    if ready:
+                        process.communicate(input=payload, timeout=timeout)
+                except subprocess.TimeoutExpired as exc:
+                    raise RuntimeError("Sandbox code execution timed out") from exc
+                finally:
+                    if process.poll() is None:
+                        process.kill()
+                    if process.returncode != 0:
+                        _remove_failed_sandbox(container_name)
             out.seek(0)
             err.seek(0)
             stdout = out.read(30000).decode(errors="replace")
             stderr = err.read(3000).decode(errors="replace")
-            if result.returncode != 0:
-                raise RuntimeError(f"Sandbox exited {result.returncode}: {stderr[:500]}")
+            if process.returncode != 0:
+                raise RuntimeError(f"Sandbox exited {process.returncode}: {stderr[:500]}")
+            if not ready:
+                raise RuntimeError("Docker sandbox exited before it was ready")
     try:
         reply = json.loads(stdout.strip().splitlines()[-1])
         tests = reply["tests"]
